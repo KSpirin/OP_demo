@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Advanced XO</title>
+    <style>
+        :root {
+            --bg: #f4f3ee;
+            --card: #ffffff;
+            --border: #d9d6cc;
+            --text: #262521;
+            --text-secondary: #6b6a63;
+            --text-muted: #9c9a90;
+            --x-color: #b5533a;
+            --x-bg: #f7e9e3;
+            --o-color: #2f6f8f;
+            --o-bg: #e5f0f4;
+            --accent: #262521;
+            --radius: 10px;
+            --win: #c9a227;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #1c1b19;
+                --card: #26251f;
+                --border: #3d3b34;
+                --text: #efece4;
+                --text-secondary: #b3b0a5;
+                --text-muted: #7d7b72;
+                --x-color: #e2876a;
+                --x-bg: #3a2620;
+                --o-color: #7cb8d6;
+                --o-bg: #1f333c;
+                --accent: #efece4;
+                --win: #d9b544;
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #1c1b19;
+            --card: #26251f;
+            --border: #3d3b34;
+            --text: #efece4;
+            --text-secondary: #b3b0a5;
+            --text-muted: #7d7b72;
+            --x-color: #e2876a;
+            --x-bg: #3a2620;
+            --o-color: #7cb8d6;
+            --o-bg: #1f333c;
+            --accent: #efece4;
+            --win: #d9b544;
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px 16px 32px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            text-align: center;
+        }
+
+        .sub {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin: 0 0 18px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 14px;
+            min-height: 22px;
+        }
+
+        .status .turn-x {
+            color: var(--x-color);
+        }
+
+        .status .turn-o {
+            color: var(--o-color);
+        }
+
+        .panels {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .panel {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            transition: opacity 0.2s;
+        }
+
+        .panel.inactive {
+            opacity: 0.45;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot.x {
+            background: var(--x-color);
+        }
+
+        .dot.o {
+            background: var(--o-color);
+        }
+
+        .levels {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .level-btn {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .level-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .level-btn.selected {
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.04);
+            font-weight: 600;
+        }
+
+        .level-btn .count {
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 0 auto 16px;
+            max-width: 320px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .cell.valid {
+            border-color: var(--accent);
+        }
+
+        .cell.valid:hover {
+            box-shadow: inset 0 0 0 2px var(--accent);
+        }
+
+        .cell.invalid {
+            cursor: not-allowed;
+        }
+
+        .cell.win {
+            box-shadow: inset 0 0 0 3px var(--win);
+        }
+
+        .piece {
+            font-size: 30px;
+            font-weight: 700;
+            position: relative;
+            line-height: 1;
+        }
+
+        .piece.x {
+            color: var(--x-color);
+        }
+
+        .piece.o {
+            color: var(--o-color);
+        }
+
+        .lvl-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -10px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            min-height: 16px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button.reset {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        button.reset:active {
+            transform: scale(0.97);
+        }
+
+        .rules {
+            margin-top: 22px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .rules b {
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Advanced XO</h1>
+    <p class="sub">XO ระดับ 1-2-3 — ทับได้เฉพาะระดับสูงกว่าเท่านั้น</p>
+
+    <div class="status" id="status"></div>
+
+    <div class="panels" id="panels"></div>
+
+    <div class="board" id="board"></div>
+
+    <div class="hint" id="hint"></div>
+
+    <div class="controls">
+        <button class="reset" id="resetBtn">เริ่มใหม่</button>
+    </div>
+
+    <div class="rules">
+        <b>กติกา:</b> Level 1 ต้องวางก่อนถึงจะวาง Level 2 ทับได้ (ของฝ่ายไหนก็ได้) และ Level 2 ต้องมีก่อนถึงจะวาง Level
+        3 ทับได้ Level 3 ทับ Level 1 ตรง ๆ ไม่ได้ ระดับเท่ากันทับกันไม่ได้ ชนะเมื่อสัญลักษณ์เดียวกันเรียง 3 ช่องติดกัน
+        ไม่สนระดับ
+    </div>
+
+    <script>
+        (function () {
+            var LEVEL_COUNTS = { 1: 5, 2: 3, 3: 2 };
+            var LINES = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            var board, hand, current, selectedLevel, winner, winLine, noMovesStreak;
+
+            function initState() {
+                board = new Array(9).fill(null).map(function () { return { owner: null, level: 0 }; });
+                hand = {
+                    X: { 1: LEVEL_COUNTS[1], 2: LEVEL_COUNTS[2], 3: LEVEL_COUNTS[3] },
+                    O: { 1: LEVEL_COUNTS[1], 2: LEVEL_COUNTS[2], 3: LEVEL_COUNTS[3] }
+                };
+                current = 'X';
+                selectedLevel = null;
+                winner = null;
+                winLine = null;
+                noMovesStreak = 0;
+            }
+
+            function isValidPlacement(cellIndex, level, player) {
+                if (winner) return false;
+                if (hand[player][level] <= 0) return false;
+                var cell = board[cellIndex];
+                if (level === 1) return cell.level === 0;
+                if (level === 2) return cell.level === 1;
+                if (level === 3) return cell.level === 2;
+                return false;
+            }
+
+            function playerHasAnyMove(player) {
+                for (var lvl = 1; lvl <= 3; lvl++) {
+                    if (hand[player][lvl] <= 0) continue;
+                    for (var i = 0; i < 9; i++) {
+                        if (isValidPlacement(i, lvl, player)) return true;
+                    }
+                }
+                return false;
+            }
+
+            function checkWin() {
+                for (var i = 0; i < LINES.length; i++) {
+                    var line = LINES[i];
+                    var a = board[line[0]], b = board[line[1]], c = board[line[2]];
+                    if (a.owner && a.owner === b.owner && b.owner === c.owner) {
+                        return { player: a.owner, line: line };
+                    }
+                }
+                return null;
+            }
+
+            function place(cellIndex) {
+                if (winner || selectedLevel === null) return;
+                if (!isValidPlacement(cellIndex, selectedLevel, current)) return;
+
+                board[cellIndex] = { owner: current, level: selectedLevel };
+                hand[current][selectedLevel] -= 1;
+
+                var result = checkWin();
+                if (result) {
+                    winner = result.player;
+                    winLine = result.line;
+                    selectedLevel = null;
+                    render();
+                    return;
+                }
+
+                var boardFull = board.every(function (c) { return c.level === 3; });
+                var noOneCanMove = !playerHasAnyMove('X') && !playerHasAnyMove('O');
+                if (boardFull || noOneCanMove) {
+                    winner = 'draw';
+                    selectedLevel = null;
+                    render();
+                    return;
+                }
+
+                current = current === 'X' ? 'O' : 'X';
+                selectedLevel = null;
+
+                if (!playerHasAnyMove(current)) {
+                    var other = current === 'X' ? 'O' : 'X';
+                    if (!playerHasAnyMove(other)) {
+                        winner = 'draw';
+                    } else {
+                        current = other;
+                    }
+                }
+
+                render();
+            }
+
+            function selectLevel(player, level) {
+                if (winner || player !== current) return;
+                if (hand[player][level] <= 0) return;
+                selectedLevel = (selectedLevel === level) ? null : level;
+                render();
+            }
+
+            function reset() {
+                initState();
+                render();
+            }
+
+            function render() {
+                var statusEl = document.getElementById('status');
+                var boardEl = document.getElementById('board');
+                var panelsEl = document.getElementById('panels');
+                var hintEl = document.getElementById('hint');
+
+                if (winner === 'draw') {
+                    statusEl.innerHTML = 'เสมอ';
+                } else if (winner) {
+                    var cls = winner === 'X' ? 'turn-x' : 'turn-o';
+                    statusEl.innerHTML = '<span class="' + cls + '">' + winner + '</span> ชนะ';
+                } else {
+                    var curCls = current === 'X' ? 'turn-x' : 'turn-o';
+                    statusEl.innerHTML = 'ตาของ <span class="' + curCls + '">' + current + '</span>';
+                }
+
+                panelsEl.innerHTML = '';
+                ['X', 'O'].forEach(function (player) {
+                    var panel = document.createElement('div');
+                    panel.className = 'panel' + (current !== player || winner ? ' inactive' : '');
+
+                    var title = document.createElement('div');
+                    title.className = 'panel-title';
+                    title.innerHTML = '<span class="dot ' + player.toLowerCase() + '"></span>' + player;
+                    panel.appendChild(title);
+
+                    var levelsWrap = document.createElement('div');
+                    levelsWrap.className = 'levels';
+                    [1, 2, 3].forEach(function (lvl) {
+                        var btn = document.createElement('button');
+                        btn.className = 'level-btn' + (selectedLevel === lvl && current === player ? ' selected' : '');
+                        var remaining = hand[player][lvl];
+                        var disabled = winner || current !== player || remaining <= 0;
+                        btn.disabled = disabled;
+                        btn.innerHTML = 'Level ' + lvl + '<span class="count">x' + remaining + '</span>';
+                        if (!disabled) {
+                            btn.addEventListener('click', function () { selectLevel(player, lvl); });
+                        }
+                        levelsWrap.appendChild(btn);
+                    });
+                    panel.appendChild(levelsWrap);
+                    panelsEl.appendChild(panel);
+                });
+
+                boardEl.innerHTML = '';
+                board.forEach(function (cell, idx) {
+                    var cellEl = document.createElement('div');
+                    var valid = !winner && selectedLevel !== null && isValidPlacement(idx, selectedLevel, current);
+                    cellEl.className = 'cell' + (valid ? ' valid' : '');
+                    if (winLine && winLine.indexOf(idx) !== -1) cellEl.classList.add('win');
+
+                    if (cell.owner) {
+                        var piece = document.createElement('div');
+                        piece.className = 'piece ' + cell.owner.toLowerCase();
+                        piece.textContent = cell.owner;
+                        var badge = document.createElement('span');
+                        badge.className = 'lvl-badge';
+                        badge.textContent = 'L' + cell.level;
+                        piece.appendChild(badge);
+                        cellEl.appendChild(piece);
+                    }
+
+                    cellEl.addEventListener('click', function () { place(idx); });
+                    boardEl.appendChild(cellEl);
+                });
+
+                if (winner === 'draw') {
+                    hintEl.textContent = 'ไม่มีใครวางต่อได้แล้ว';
+                } else if (winner) {
+                    hintEl.textContent = 'กด "เริ่มใหม่" เพื่อเล่นอีกครั้ง';
+                } else if (selectedLevel === null) {
+                    hintEl.textContent = 'เลือกระดับหมากที่จะวางจากแผงด้านบน';
+                } else {
+                    var anyValid = board.some(function (c, i) { return isValidPlacement(i, selectedLevel, current); });
+                    hintEl.textContent = anyValid ? 'แตะช่องที่ขอบเน้นสีเพื่อวาง' : 'ระดับนี้วางไม่ได้ตอนนี้ ลองเลือกระดับอื่น';
+                }
+            }
+
+            document.getElementById('resetBtn').addEventListener('click', reset);
+
+            initState();
+            render();
+        })();
+    </script>
+
+</body>
+
+</html>
